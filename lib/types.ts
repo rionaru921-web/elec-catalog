@@ -36,6 +36,7 @@ export interface Product {
   specs: Spec[];
   tags: string[];
   featured?: boolean;
+  status?: 'current' | 'discontinued' | 'limited' | 'pre-order';
   // Optional fields for product detail pages
   summary?: string;
   features?: string[];

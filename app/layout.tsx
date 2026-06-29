@@ -1,11 +1,17 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import dynamic from 'next/dynamic';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import Starfield from '@/components/Starfield';
 
+const AmbientBackground = dynamic(
+  () => import('@/components/three/AmbientBackground').then(m => ({ default: m.AmbientBackground })),
+  { ssr: false }
+);
+
 export const metadata: Metadata = {
-  metadataBase: new URL('https://catalog.vercel.app'), // デプロイ後に正しいURLへ更新
+  metadataBase: new URL('https://elec-catalog.vercel.app'),
   title: {
     default: 'CATALOG — 形状で索引する電子機器カタログ',
     template: '%s | CATALOG'
@@ -41,6 +47,8 @@ export default function RootLayout({
   return (
     <html lang="ja">
       <body className="scanlines relative min-h-screen bg-black text-white">
+        {/* 3D 常駐背景（z-index: -1 / fixed / pointer-events: none） */}
+        <AmbientBackground />
         <Starfield />
         <Header />
         <main className="relative">{children}</main>

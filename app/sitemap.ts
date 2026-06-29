@@ -3,7 +3,7 @@ import { products } from '@/data/products';
 import { categories } from '@/data/categories';
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const base = 'https://catalog.vercel.app'; // デプロイ後に正しいURLへ更新
+  const base = 'https://elec-catalog.vercel.app'; // デプロイ後に正しいURLへ更新
   const now = new Date();
 
   const staticPages: MetadataRoute.Sitemap = [
