@@ -3,9 +3,15 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { products, getProductById, getRelatedProducts } from '@/data/products';
 import { getCategoryById, getSubCategory } from '@/data/categories';
+import dynamic from 'next/dynamic';
 import Card3D from '@/components/ui/Card3D';
 import Breadcrumb from '@/components/ui/Breadcrumb';
 import TypeCodeBadge from '@/components/ui/TypeCodeBadge';
+
+const Product3DViewer = dynamic(
+  () => import('@/components/three/Product3DViewer').then(m => ({ default: m.Product3DViewer })),
+  { ssr: false }
+);
 
 interface PageProps {
   params: { id: string };
@@ -17,10 +23,47 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const product = getProductById(params.id);
-  if (!product) return { title: 'Not Found' };
+  if (!product) {
+    return {
+      title: "Not Found | ELECTRONICS",
+      description: "指定された製品は見つかりませんでした。",
+    };
+  }
+
+  const statusLabel: Record<string, string> = {
+    current: "現行モデル",
+    "pre-order": "予約受付中",
+    limited: "限定モデル",
+    discontinued: "生産終了",
+  };
+
+  const status = product.status ?? "current";
+  const description = `${product.brand} ${product.name}（${product.typeCode}）${statusLabel[status]} - ${product.description.slice(0, 80)}`;
+
   return {
-    title: `${product.name} | ${product.brand} | CATALOG`,
-    description: product.description
+    title: `${product.name} | ${product.typeCode} | ELECTRONICS`,
+    description,
+    keywords: [
+      product.name,
+      product.brand,
+      product.typeCode,
+      ...product.tags,
+      "電子機器カタログ",
+      "elec-catalog",
+      "ELECTRONICS",
+    ],
+    openGraph: {
+      title: `${product.name} | ${product.typeCode}`,
+      description,
+      images: [{ url: product.imageUrl, width: 800, height: 800, alt: product.name }],
+      type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${product.name} | ${product.typeCode}`,
+      description,
+      images: [product.imageUrl],
+    },
   };
 }
 
@@ -63,35 +106,17 @@ export default function ProductPage({ params }: PageProps) {
         </div>
 
         <div className="relative z-10 grid items-start gap-12 lg:grid-cols-2 lg:gap-16">
-          {/* LEFT: 製品画像 */}
+          {/* LEFT: 3D ビューアー */}
           <div>
-            <Card3D intensity={6}>
-              <div className="relative aspect-square overflow-hidden border border-neon/30 bg-void-900">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={product.imageUrl}
-                  alt={product.name}
-                  className="h-full w-full object-cover"
-                />
-                {/* ビューファインダーコーナー */}
-                <Corner pos="tl" />
-                <Corner pos="tr" />
-                <Corner pos="bl" />
-                <Corner pos="br" />
-                {/* タイプコードピル */}
-                <TypeCodeBadge code={product.typeCode} variant="overlay" size="md" className="absolute left-4 top-4 z-10" />
-                {/* Featured バッジ */}
-                {product.featured && (
-                  <span className="absolute right-4 top-4 z-10 bg-neon px-3 py-1.5 font-mono text-xs font-bold text-black">
-                    ◉ FEATURED
-                  </span>
-                )}
-              </div>
-            </Card3D>
-            {/* SERIAL */}
+            <Product3DViewer
+              imageUrl={product.imageUrl}
+              status={product.status}
+              productCode={product.id}
+            />
+            {/* release date */}
             <div className="mt-4 font-mono text-xs text-pale-500">
-              SERIAL:{' '}
-              <span className="text-neon glow-soft">{product.id.toUpperCase()}</span>
+              RELEASED:{' '}
+              <span className="text-neon glow-soft">{product.releaseDate}</span>
             </div>
           </div>
 
@@ -234,20 +259,3 @@ export default function ProductPage({ params }: PageProps) {
   );
 }
 
-/* ====================================================== */
-/* ビューファインダーコーナー                              */
-/* ====================================================== */
-function Corner({ pos }: { pos: 'tl' | 'tr' | 'bl' | 'br' }) {
-  const cls: Record<typeof pos, string> = {
-    tl: 'top-3 left-3 border-t-2 border-l-2',
-    tr: 'top-3 right-3 border-t-2 border-r-2',
-    bl: 'bottom-3 left-3 border-b-2 border-l-2',
-    br: 'bottom-3 right-3 border-b-2 border-r-2'
-  };
-  return (
-    <span
-      aria-hidden
-      className={`pointer-events-none absolute h-6 w-6 border-neon ${cls[pos]}`}
-    />
-  );
-}

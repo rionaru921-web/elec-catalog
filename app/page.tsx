@@ -9,6 +9,14 @@ const ParticleGalaxy = dynamic(
   { ssr: false }
 );
 
+const CAT_COLORS: Record<string, string> = {
+  pc: "#00FF95",
+  sp: "#00D9FF",
+  tb: "#FF00C8",
+  au: "#FFD600",
+  pr: "#FF6B00",
+};
+
 export default function Home() {
   const featured = getFeaturedProducts();
 
@@ -136,14 +144,127 @@ export default function Home() {
       </section>
 
       {/* ====================================================== */}
-      {/* § 02 — FEATURED                                         */}
+      {/* § 02 — TYPE INDEX (NEW)                                 */}
+      {/* ====================================================== */}
+      <section
+        id="type-index"
+        className="relative py-24 md:py-32 border-t border-neon/10"
+      >
+        <div className="max-w-6xl mx-auto px-6 md:px-8">
+          {/* セクション番号 */}
+          <div className="flex items-center gap-4 mb-12">
+            <span className="text-neon font-mono text-sm tracking-[0.3em]">
+              § 02
+            </span>
+            <span className="text-zinc-500 font-mono text-sm tracking-[0.3em]">
+              — TYPE INDEX
+            </span>
+            <div className="flex-1 h-px bg-neon/20"></div>
+          </div>
+
+          <div className="grid md:grid-cols-12 gap-12 items-center">
+            {/* === 左カラム: 巨大タイポ + CTA === */}
+            <div className="md:col-span-7">
+              {/* カテゴリ別カラードット */}
+              <div className="flex items-center gap-2 mb-6">
+                <span className="inline-block w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: "#00FF95" }} />
+                <span className="inline-block w-2 h-2 rounded-full" style={{ backgroundColor: "#00D9FF" }} />
+                <span className="inline-block w-2 h-2 rounded-full" style={{ backgroundColor: "#FF00C8" }} />
+                <span className="inline-block w-2 h-2 rounded-full" style={{ backgroundColor: "#FFD600" }} />
+                <span className="inline-block w-2 h-2 rounded-full" style={{ backgroundColor: "#FF6B00" }} />
+                <span className="text-zinc-500 font-mono text-[10px] tracking-[0.25em] ml-3">
+                  5 CATEGORIES · 21 TYPES · {products.length} PRODUCTS
+                </span>
+              </div>
+
+              {/* 巨大タイポ */}
+              <h2 className="text-7xl md:text-9xl font-bold tracking-tight leading-[0.9]">
+                <span className="text-white">21</span>
+                <br />
+                <span className="text-neon">TYPES</span>
+                <br />
+                <span className="text-zinc-500 text-4xl md:text-6xl block mt-2">
+                  IN 3D SPACE.
+                </span>
+              </h2>
+
+              {/* 説明文 */}
+              <p className="text-zinc-400 mt-8 max-w-md text-base leading-relaxed">
+                物理形状で索引された電子機器カタログ。
+                <br />
+                全21タイプコードを3D球面空間で探索できる。
+              </p>
+              <p className="text-zinc-600 text-sm mt-2 max-w-md leading-relaxed">
+                ドラッグで回転 · スクロールでズーム · クリックで該当タイプへ。
+              </p>
+
+              {/* CTA */}
+              <Link
+                href="/catalog"
+                className="group inline-flex items-center gap-4 mt-10 px-8 py-4 border border-neon bg-neon/5 hover:bg-neon hover:text-black transition-all duration-300 font-mono text-sm tracking-[0.25em] text-neon"
+              >
+                <span>ENTER 3D CATALOG</span>
+                <span className="group-hover:translate-x-1 transition-transform">→</span>
+              </Link>
+            </div>
+
+            {/* === 右カラム: タイプコードプレビューグリッド === */}
+            <div className="md:col-span-5">
+              <div className="border border-neon/20 bg-black/40 p-5 backdrop-blur-sm">
+                {/* グリッドヘッダー */}
+                <div className="flex items-center justify-between mb-4 pb-3 border-b border-neon/10">
+                  <div className="text-neon font-mono text-[10px] tracking-[0.3em] flex items-center gap-2">
+                    <span className="inline-block w-1 h-1 rounded-full bg-neon animate-pulse" />
+                    INDEX PREVIEW
+                  </div>
+                  <div className="text-zinc-600 font-mono text-[9px] tracking-[0.2em]">v2.0</div>
+                </div>
+
+                {/* 21タイプコードグリッド */}
+                <div className="grid grid-cols-3 gap-2">
+                  {categories.flatMap((cat) =>
+                    cat.subCategories.map((sub) => (
+                      <Link
+                        key={sub.code}
+                        href={`/c/${cat.id}`}
+                        className="group block border border-zinc-800 hover:border-neon p-2 transition-all duration-200"
+                      >
+                        <div
+                          className="text-[10px] font-mono font-bold tracking-[0.15em]"
+                          style={{ color: CAT_COLORS[cat.id] ?? "#00FF95" }}
+                        >
+                          {sub.code}
+                        </div>
+                        <div className="text-[9px] text-zinc-500 group-hover:text-zinc-300 mt-0.5 truncate transition-colors">
+                          {sub.name}
+                        </div>
+                      </Link>
+                    ))
+                  )}
+                </div>
+
+                {/* グリッドフッター */}
+                <div className="mt-4 pt-3 border-t border-neon/10 flex items-center justify-between font-mono text-[10px] text-zinc-500 tracking-[0.2em]">
+                  <span>{products.length} PRODUCTS INDEXED</span>
+                  <Link href="/catalog" className="text-neon hover:underline">
+                    VIEW ALL →
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ====================================================== */}
+      {/* § 03 — FEATURED                                         */}
       {/* ====================================================== */}
       <section className="relative border-t border-pale-300/30 bg-void-950">
         <div className="mx-auto max-w-6xl px-6 py-24">
           <div className="mb-14 flex items-end justify-between border-b border-pale-300/30 pb-6">
             <div>
               <div className="font-mono text-[11px] uppercase tracking-[0.3em] text-neon">
-                § 02 — Featured
+                § 03 — Featured
               </div>
               <h2 className="mt-3 text-4xl font-bold tracking-tightest text-white md:text-5xl">
                 注目の製品
@@ -190,13 +311,13 @@ export default function Home() {
       </section>
 
       {/* ====================================================== */}
-      {/* § 03 — APPROACH                                         */}
+      {/* § 04 — APPROACH                                         */}
       {/* ====================================================== */}
       <section className="relative border-t border-pale-300/30">
         <div className="mx-auto grid max-w-6xl gap-12 px-6 py-24 md:grid-cols-[1fr_2fr]">
           <div>
             <div className="font-mono text-[11px] uppercase tracking-[0.3em] text-neon">
-              § 03 — Approach
+              § 04 — Approach
             </div>
             <h2 className="mt-3 text-4xl font-bold tracking-tightest text-white">
               この目録の前提
