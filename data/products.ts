@@ -360,7 +360,7 @@ export const products: Product[] = [
     brand: 'Microsoft',
     price: 208780,
     releaseDate: '2024-06',
-    imageUrl: ph('PC-2N1', 3),
+    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b4/Microsoft_Surface_Pro.jpg/3840px-Microsoft_Surface_Pro.jpg',
     description: 'Snapdragon X Elite搭載で大幅に省電力化したSurface Pro。キックスタンドとタイプカバーで2-in-1の定番フォームファクタを継承。',
     specs: [
       { label: 'プロセッサ',   value: 'Snapdragon X Elite' },
@@ -737,7 +737,7 @@ export const products: Product[] = [
     brand: 'OnePlus',
     price: 139800,
     releaseDate: '2025-01',
-    imageUrl: ph('SP-AD', 6),
+    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/9/95/OnePlus_13_front.jpg',
     description: 'Snapdragon 8 Elite + 6000mAhの大容量バッテリーを両立したパフォーマンス重視フラッグシップ。100W急速充電で実用性も高い。',
     specs: [
       { label: 'プロセッサ', value: 'Snapdragon 8 Elite' },
@@ -824,7 +824,7 @@ export const products: Product[] = [
     brand: 'Samsung',
     price: 274780,
     releaseDate: '2024-07',
-    imageUrl: ph('SP-FD', 1),
+    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/0/0c/Samsung_Galaxy_Z_Fold6.png',
     description: '開けば7.6インチのタブレット、閉じれば普通のスマホ。書類仕事とマルチタスクに強い縦折り型の完成形。薄型化と軽量化が進み、折りたたみスマホの実用性がついに本物になった。',
     specs: [
       { label: 'プロセッサ', value: 'Snapdragon 8 Gen 3 for Galaxy' },
@@ -871,7 +871,7 @@ export const products: Product[] = [
     brand: 'Samsung',
     price: 159800,
     releaseDate: '2024-07',
-    imageUrl: ph('SP-FD', 3),
+    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/e/e3/%E4%B8%89%E6%98%9FGalaxy_Z_Flip6.png',
     description: '縦折りコンパクト型の定番。閉じれば手のひらサイズ、開けば通常スマホとして使える携帯性重視の折りたたみ機。',
     specs: [
       { label: 'プロセッサ', value: 'Snapdragon 8 Gen 3 for Galaxy' },
@@ -893,7 +893,7 @@ export const products: Product[] = [
     price: 289800,
     priceText: '¥289,800 〜',
     releaseDate: '2026-07',
-    imageUrl: ph('SP-FD', 4),
+    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/7/72/Samsung_Galaxy_Fold7_Main_Screen_%28cropped%29.jpg',
     description: '薄型化が大幅に進んだ新世代Fold。折りたたみ部の段差を解消したヒンジ機構で、閉じた状態の質感が通常スマホに近づいた。予約受付中。',
     specs: [
       { label: 'プロセッサ', value: 'Snapdragon 8 Elite Gen 5 for Galaxy' },
@@ -988,7 +988,7 @@ export const products: Product[] = [
     brand: 'Apple',
     price: 58800,
     releaseDate: '2025-03',
-    imageUrl: ph('TB-IP', 4),
+    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/f/f0/IPad_11_%28A16%29.png',
     description: 'A16チップ搭載でApple Intelligenceにも対応した無印iPad。価格を抑えつつ日常用途を十分カバーするスタンダードモデル。',
     specs: [
       { label: 'プロセッサ', value: 'Apple A16' },
@@ -1077,7 +1077,7 @@ export const products: Product[] = [
     brand: 'Google',
     price: 79800,
     releaseDate: '2023-06',
-    imageUrl: ph('TB-AD', 2),
+    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b1/Pixel_Tablet_front.svg/1920px-Pixel_Tablet_front.svg.png',
     description: '充電スピーカードック付属でスマートホームハブにも変身する独自路線のタブレット。置いておくだけで家のハブになる新しいタブレットの使い方を提案。',
     specs: [
       { label: 'プロセッサ',   value: 'Google Tensor G2' },
@@ -2020,7 +2020,7 @@ export const products: Product[] = [
     price: 199800,
     priceText: '¥199,800 〜',
     releaseDate: '2022-03',
-    imageUrl: ph('PR-MN', 1),
+    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Apple_Studio_Display_2024.jpg/3840px-Apple_Studio_Display_2024.jpg',
     description: 'Apple純正の27インチ5K Retinaディスプレイ。A13チップ内蔵で12MPセンターフレームカメラ・6スピーカーも一体化。Thunderbolt 3 + USB-Cハブ機能で接続性も高い。',
     specs: [
       { label: 'ディスプレイ', value: '27インチ 5K Retina (5120 × 2880)' },

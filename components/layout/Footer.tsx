@@ -99,6 +99,20 @@ export default function Footer() {
           <span>© {year} CATALOG · All rights reserved</span>
           <span>━━ END OF DOCUMENT ━━</span>
         </div>
+
+        {/* IMAGE ATTRIBUTION */}
+        <div className="mt-4 font-mono text-[10px] normal-case tracking-normal text-pale-500">
+          一部の製品画像:{' '}
+          <a
+            href="https://commons.wikimedia.org"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline hover:text-neon"
+          >
+            Wikimedia Commons
+          </a>
+          （各画像のライセンスは出典ページを参照）
+        </div>
       </div>
     </footer>
   );
