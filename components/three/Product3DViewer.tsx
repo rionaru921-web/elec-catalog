@@ -1,10 +1,10 @@
 'use client';
 
-import { useRef, useEffect, useMemo, Suspense } from 'react';
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, useTexture } from '@react-three/drei';
-import { useReducedMotion } from '@/lib/useReducedMotion';
+import { OrbitControls, useTexture, Html } from '@react-three/drei';
 import * as THREE from 'three';
+import { useReducedMotion } from '@/lib/useReducedMotion';
 
 // ================================================================
 // Types
@@ -29,173 +29,350 @@ const STATUS_CFG: Record<string, { label: string; color: string; pulse: boolean 
 };
 
 // ================================================================
-// 3D: loading wireframe (shown while texture loads)
+// ホログラム板（メイン）
 // ================================================================
-function LoadingBox() {
-  const ref = useRef<THREE.Mesh>(null);
-  useFrame((_, dt) => {
-    if (ref.current) ref.current.rotation.y += dt * 0.4;
-  });
-  return (
-    <mesh ref={ref}>
-      <boxGeometry args={[3.5, 3.5, 0.2]} />
-      <meshBasicMaterial color="#00FF95" wireframe transparent opacity={0.35} />
-    </mesh>
-  );
-}
-
-// ================================================================
-// 3D: thin product box — image on front face only
-// ================================================================
-function ProductBox({
+function HologramPlate({
   imageUrl,
-  autoRotateRef
+  isInteracting,
 }: {
   imageUrl: string;
-  autoRotateRef: React.MutableRefObject<boolean>;
+  isInteracting: boolean;
 }) {
-  const groupRef = useRef<THREE.Group>(null);
-  const reduced = useReducedMotion();
+  const meshRef = useRef<THREE.Mesh>(null);
   const texture = useTexture(imageUrl);
+  const reduced = useReducedMotion();
 
   useEffect(() => {
     texture.colorSpace = THREE.SRGBColorSpace;
+    texture.anisotropy = 8;
     texture.needsUpdate = true;
   }, [texture]);
 
-  // Six face materials: right/left/top/bottom/front/back
   const materials = useMemo(() => {
-    const edge = new THREE.MeshStandardMaterial({ color: '#101015', roughness: 0.5, metalness: 0.65 });
-    const back = new THREE.MeshStandardMaterial({ color: '#030305', roughness: 0.7 });
-    const front = new THREE.MeshStandardMaterial({ roughness: 0.15, metalness: 0.05 });
-    front.map = texture;
-    return [edge, edge, edge, edge, front, back];
+    // 側面: 強発光メタリックエッジ
+    const sideMat = new THREE.MeshStandardMaterial({
+      color: '#00FF95',
+      emissive: '#00FF95',
+      emissiveIntensity: 0.6,
+      metalness: 0.95,
+      roughness: 0.15,
+    });
+    // 前面: 画像 + 軽いネオングロウ
+    const frontMat = new THREE.MeshStandardMaterial({
+      map: texture,
+      emissive: '#00FF95',
+      emissiveIntensity: 0.04,
+      metalness: 0.2,
+      roughness: 0.4,
+    });
+    // 背面: ネオン強発光
+    const backMat = new THREE.MeshStandardMaterial({
+      color: '#0a0a0a',
+      emissive: '#00FF95',
+      emissiveIntensity: 0.5,
+      metalness: 0.6,
+      roughness: 0.3,
+    });
+    // 順序: [+X右, -X左, +Y上, -Y下, +Z前, -Z後]
+    return [sideMat, sideMat, sideMat, sideMat, frontMat, backMat];
   }, [texture]);
 
   useEffect(() => {
     return () => { materials.forEach(m => m.dispose()); };
   }, [materials]);
 
+  useFrame((state, delta) => {
+    if (reduced || !meshRef.current) return;
+    if (!isInteracting) {
+      meshRef.current.rotation.y += delta * 0.3;
+    }
+    // 微妙なふわふわ感（ホバー演出）
+    meshRef.current.rotation.x = Math.sin(state.clock.elapsedTime * 0.5) * 0.06;
+    meshRef.current.position.y = Math.sin(state.clock.elapsedTime * 0.8) * 0.05;
+  });
+
+  return (
+    <mesh ref={meshRef} material={materials}>
+      <boxGeometry args={[3.5, 3.5, 0.18]} />
+    </mesh>
+  );
+}
+
+// ================================================================
+// ホログラムオーラ（板の周囲の透明な発光枠2層）
+// ================================================================
+function HologramAura({ isInteracting }: { isInteracting: boolean }) {
+  const groupRef = useRef<THREE.Group>(null);
+  const reduced = useReducedMotion();
+
   useFrame((_, delta) => {
-    if (reduced || !autoRotateRef.current || !groupRef.current) return;
+    if (reduced || isInteracting || !groupRef.current) return;
     groupRef.current.rotation.y += delta * 0.3;
   });
 
   return (
     <group ref={groupRef}>
-      <mesh material={materials}>
-        <boxGeometry args={[3.5, 3.5, 0.2]} />
+      {/* 内側オーラ */}
+      <mesh>
+        <boxGeometry args={[3.85, 3.85, 0.02]} />
+        <meshBasicMaterial
+          color="#00FF95"
+          transparent
+          opacity={0.08}
+          side={THREE.DoubleSide}
+          blending={THREE.AdditiveBlending}
+          depthWrite={false}
+        />
+      </mesh>
+      {/* 外側オーラ */}
+      <mesh position={[0, 0, -0.08]}>
+        <boxGeometry args={[4.3, 4.3, 0.02]} />
+        <meshBasicMaterial
+          color="#00FF95"
+          transparent
+          opacity={0.04}
+          side={THREE.DoubleSide}
+          blending={THREE.AdditiveBlending}
+          depthWrite={false}
+        />
       </mesh>
     </group>
   );
 }
 
 // ================================================================
-// HTML: corner bracket overlay
+// 浮遊パーティクル（板の周囲を旋回）
+// ================================================================
+function FloatingParticles() {
+  const ref = useRef<THREE.Points>(null);
+  const reduced = useReducedMotion();
+
+  const positions = useMemo(() => {
+    const COUNT = 60;
+    const arr = new Float32Array(COUNT * 3);
+    for (let i = 0; i < COUNT; i++) {
+      const angle = (i / COUNT) * Math.PI * 2 + Math.random() * 0.3;
+      const r = 2.7 + Math.random() * 1.8;
+      arr[i * 3] = Math.cos(angle) * r;
+      arr[i * 3 + 1] = (Math.random() - 0.5) * 4.5;
+      arr[i * 3 + 2] = Math.sin(angle) * r;
+    }
+    return arr;
+  }, []);
+
+  useFrame((_, delta) => {
+    if (reduced || !ref.current) return;
+    ref.current.rotation.y -= delta * 0.1; // 板と逆方向にゆっくり
+  });
+
+  if (reduced) return null;
+
+  return (
+    <points ref={ref}>
+      <bufferGeometry>
+        <bufferAttribute
+          attach="attributes-position"
+          count={positions.length / 3}
+          array={positions}
+          itemSize={3}
+        />
+      </bufferGeometry>
+      <pointsMaterial
+        size={0.045}
+        color="#00FF95"
+        transparent
+        opacity={0.8}
+        sizeAttenuation
+        depthWrite={false}
+        blending={THREE.AdditiveBlending}
+      />
+    </points>
+  );
+}
+
+// ================================================================
+// 反射リング（板の下、展示台風）
+// ================================================================
+function FloorRing() {
+  return (
+    <group position={[0, -2.5, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+      {/* 外周リング */}
+      <mesh>
+        <ringGeometry args={[1.8, 2.1, 64]} />
+        <meshBasicMaterial
+          color="#00FF95"
+          transparent
+          opacity={0.25}
+          side={THREE.DoubleSide}
+          blending={THREE.AdditiveBlending}
+        />
+      </mesh>
+      {/* 内周リング（薄め） */}
+      <mesh position={[0, 0, 0.01]}>
+        <ringGeometry args={[1.2, 1.5, 64]} />
+        <meshBasicMaterial
+          color="#00FF95"
+          transparent
+          opacity={0.12}
+          side={THREE.DoubleSide}
+          blending={THREE.AdditiveBlending}
+        />
+      </mesh>
+    </group>
+  );
+}
+
+// ================================================================
+// シーン
+// ================================================================
+function Scene({
+  imageUrl,
+  isInteracting,
+}: {
+  imageUrl: string;
+  isInteracting: boolean;
+}) {
+  return (
+    <>
+      {/* 環境光（控えめ） */}
+      <ambientLight intensity={0.25} />
+
+      {/* 上からの白スポット（ショーケース風） */}
+      <pointLight position={[0, 6, 3]} color="#ffffff" intensity={1.6} />
+      <pointLight position={[0, 3, 5]} color="#ffffff" intensity={0.8} />
+
+      {/* 4方向のネオンリムライト */}
+      <pointLight position={[5, 0, 0]} color="#00FF95" intensity={1.0} />
+      <pointLight position={[-5, 0, 0]} color="#00FF95" intensity={1.0} />
+      <pointLight position={[0, 0, -5]} color="#00FF95" intensity={0.8} />
+      <pointLight position={[0, -3, 2]} color="#00FF95" intensity={0.5} />
+
+      <HologramPlate imageUrl={imageUrl} isInteracting={isInteracting} />
+      <HologramAura isInteracting={isInteracting} />
+      <FloatingParticles />
+      <FloorRing />
+    </>
+  );
+}
+
+// ================================================================
+// ローディング
+// ================================================================
+function LoadingFallback() {
+  return (
+    <Html center>
+      <div className="animate-pulse font-mono text-xs tracking-[0.3em] text-neon">
+        LOADING HOLOGRAM...
+      </div>
+    </Html>
+  );
+}
+
+// ================================================================
+// HTML: 4隅コーナーブラケット
 // ================================================================
 function CornerBracket({ pos }: { pos: 'tl' | 'tr' | 'bl' | 'br' }) {
   const cls = {
-    tl: 'top-4 left-4 border-t-2 border-l-2',
-    tr: 'top-4 right-4 border-t-2 border-r-2',
-    bl: 'bottom-4 left-4 border-b-2 border-l-2',
-    br: 'bottom-4 right-4 border-b-2 border-r-2'
+    tl: 'top-2 left-2 border-t border-l',
+    tr: 'top-2 right-2 border-t border-r',
+    bl: 'bottom-2 left-2 border-b border-l',
+    br: 'bottom-2 right-2 border-b border-r',
   };
   return (
     <span
-      className={`pointer-events-none absolute h-5 w-5 border-[#00FF95] ${cls[pos]}`}
+      className={`pointer-events-none absolute z-10 h-5 w-5 border-neon ${cls[pos]}`}
       aria-hidden
     />
   );
 }
 
 // ================================================================
-// Main exported component
+// メインコンポーネント
 // ================================================================
 export function Product3DViewer({
   imageUrl,
   status,
   productCode,
-  className = ''
+  className = '',
 }: Product3DViewerProps) {
-  const autoRotateRef = useRef<boolean>(true);
+  const [isInteracting, setIsInteracting] = useState(false);
   const cfg = STATUS_CFG[status ?? 'current'] ?? STATUS_CFG.current;
 
   return (
     <div
-      className={`relative aspect-square overflow-hidden bg-[#08080B] ${className}`}
-      onPointerDown={() => { autoRotateRef.current = false; }}
-      onPointerUp={() => { autoRotateRef.current = true; }}
-      onPointerLeave={() => { autoRotateRef.current = true; }}
+      className={`relative aspect-square w-full overflow-hidden border border-neon/20 bg-black ${className}`}
     >
-      {/* ── 3D Canvas ── */}
-      <Canvas
-        camera={{ position: [0, 0, 6], fov: 45 }}
-        gl={{ alpha: false, antialias: true }}
-        dpr={[1, 1.5]}
-        style={{ background: '#08080B' }}
-      >
-        <color attach="background" args={['#08080B']} />
-
-        {/* Lighting: neon green rim + white fill */}
-        <ambientLight intensity={0.5} />
-        <spotLight position={[4, 4, 4]} color="#00FF95" intensity={2.0} penumbra={0.6} />
-        <directionalLight position={[-3, 2, 5]} color="#ffffff" intensity={0.8} />
-        <pointLight position={[-4, -3, 3]} color="#00FF95" intensity={0.4} />
-
-        <Suspense fallback={<LoadingBox />}>
-          <ProductBox imageUrl={imageUrl} autoRotateRef={autoRotateRef} />
-        </Suspense>
-
-        <OrbitControls
-          enablePan={false}
-          minDistance={3}
-          maxDistance={10}
-          enableDamping
-          dampingFactor={0.08}
-        />
-      </Canvas>
-
-      {/* ── Corner brackets ── */}
+      {/* 4隅コーナーブラケット */}
       <CornerBracket pos="tl" />
       <CornerBracket pos="tr" />
       <CornerBracket pos="bl" />
       <CornerBracket pos="br" />
 
-      {/* ── HUD ── */}
-      <div
-        className="pointer-events-none absolute left-4 top-11 font-mono text-[10px] uppercase tracking-widest text-[#00FF95]"
-        style={{ textShadow: '0 0 8px rgba(0,255,149,0.5)' }}
-      >
-        ● 3D VIEW
-      </div>
-      <div className="pointer-events-none absolute bottom-4 left-4 font-mono text-[10px] uppercase tracking-widest text-[#6B6B73]">
-        ID: {productCode.toUpperCase()}
-      </div>
-      <div className="pointer-events-none absolute bottom-4 right-4 font-mono text-[10px] uppercase tracking-widest text-[#6B6B73]">
-        DRAG · SCROLL
+      {/* HUD: 左上 */}
+      <div className="absolute left-3 top-3 z-20 flex items-center gap-2 font-mono text-[10px] tracking-[0.2em] text-neon">
+        <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-neon" />
+        HOLOGRAM
       </div>
 
-      {/* ── Status badge ── */}
+      {/* StatusBadge: 右上 */}
       <div
-        className="pointer-events-none absolute right-4 top-4 rounded-full border bg-black/80 px-3 py-1 font-mono text-[10px] tracking-widest backdrop-blur-sm"
+        className="pointer-events-none absolute right-3 top-3 z-20 rounded-full border bg-black/80 px-3 py-1 font-mono text-[10px] tracking-widest backdrop-blur-sm"
         style={{
           color: cfg.color,
           borderColor: `${cfg.color}55`,
-          ...(cfg.pulse ? { animation: 'pulse 2s ease-in-out infinite' } : {})
+          ...(cfg.pulse ? { animation: 'pulse 2s ease-in-out infinite' } : {}),
         }}
       >
         {cfg.label}
       </div>
 
-      {/* ── Scanline CRT overlay ── */}
+      {/* HUD: 左下 */}
+      <div className="pointer-events-none absolute bottom-3 left-3 z-20 font-mono text-[10px] tracking-[0.2em] text-zinc-500">
+        ID: {productCode.toUpperCase()}
+      </div>
+
+      {/* HUD: 右下 */}
+      <div className="pointer-events-none absolute bottom-3 right-3 z-20 font-mono text-[10px] tracking-[0.2em] text-zinc-500">
+        DRAG · SCROLL
+      </div>
+
+      {/* スキャンライン */}
       <div
-        className="pointer-events-none absolute inset-0"
+        className="pointer-events-none absolute inset-0 z-10 mix-blend-screen opacity-25"
         style={{
-          backgroundImage:
-            'repeating-linear-gradient(180deg,transparent 0,transparent 3px,rgba(0,255,149,0.018) 3px,rgba(0,255,149,0.018) 4px)'
+          background:
+            'repeating-linear-gradient(0deg, rgba(0,255,149,0.05) 0px, rgba(0,255,149,0.05) 1px, transparent 1px, transparent 3px)',
         }}
-        aria-hidden
       />
+
+      {/* 中央ビネット（深度感） */}
+      <div
+        className="pointer-events-none absolute inset-0 z-[5]"
+        style={{
+          background:
+            'radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.4) 100%)',
+        }}
+      />
+
+      <Canvas
+        camera={{ position: [0, 0, 5.5], fov: 50 }}
+        gl={{ antialias: true, alpha: true }}
+        onPointerDown={() => setIsInteracting(true)}
+        onPointerUp={() => setIsInteracting(false)}
+        onPointerLeave={() => setIsInteracting(false)}
+      >
+        <Suspense fallback={<LoadingFallback />}>
+          <Scene imageUrl={imageUrl} isInteracting={isInteracting} />
+        </Suspense>
+        <OrbitControls
+          enableZoom
+          enablePan={false}
+          minDistance={3}
+          maxDistance={10}
+          rotateSpeed={0.8}
+          zoomSpeed={0.6}
+        />
+      </Canvas>
     </div>
   );
 }
