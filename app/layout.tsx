@@ -17,7 +17,7 @@ export const metadata: Metadata = {
     template: '%s | CATALOG'
   },
   description:
-    '用途ではなく、物理的な形状で電子機器を索引する。21タイプコード × 50製品のカタログ。PC・スマホ・タブレット・オーディオ・周辺機器。',
+    '用途ではなく、物理的な形状で電子機器を索引する。21タイプコード × 100製品のカタログ。PC・スマホ・タブレット・オーディオ・周辺機器。',
   keywords: ['カタログ', '電子機器', 'タイプコード', 'ガジェット', 'iPhone', 'MacBook', 'iPad', 'ヘッドホン', 'PC'],
   authors: [{ name: 'CATALOG' }],
   openGraph: {
